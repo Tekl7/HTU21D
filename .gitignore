@@ -1,3 +1,5 @@
 
 HTU21D.componentinfo.xml
 *.cppproj
+Debug/makedep.mk
+Debug/Makefile
