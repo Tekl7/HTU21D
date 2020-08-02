@@ -4,7 +4,7 @@
 
 This is an AVR library for SHT21, HTU21D & Si70xx Digital Humidity and Temperature Sensor
 
-This library has been created to support AVR devices with USI interface.
+This fork has been created to support AVR devices with USI interface.
 
 Supports all sensors features:
 
