@@ -2,7 +2,8 @@
 
 # HTU21D
 
-This is an Arduino library for SHT21, HTU21D & Si70xx Digital Humidity and Temperature Sensor
+This is an AVR library for SHT21, HTU21D & Si70xx Digital Humidity and Temperature Sensor
+This library has been created to support AVR devices with USI interface.
 
 Supports all sensors features:
 
@@ -15,11 +16,12 @@ Supports all sensors features:
 - read FW version**
 - read sensor ID**
 
+To use this library one additional library have to be included:
+USIWire library: https://github.com/puuu/USIWire
+
 Tested on:
 
-- Arduino AVR
-- Arduino ESP8266
-- Arduino STM32
+- ATtiny85
 
 [license-badge]: https://img.shields.io/badge/License-GPLv3-blue.svg
 [license]:       https://choosealicense.com/licenses/gpl-3.0/
