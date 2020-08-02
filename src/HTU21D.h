@@ -32,21 +32,9 @@
 #ifndef HTU21D_h
 #define HTU21D_h
 
-#if defined(ARDUINO) && ((ARDUINO) >= 100)     //arduino core v1.0 or later
-#include <Arduino.h>
-#else
-#include <WProgram.h>
-#endif
+#include <avr/pgmspace.h>                      //use for PROGMEM AVR
 
-#if defined(__AVR__)
-#include <avr/pgmspace.h>                      //use for PROGMEM Arduino AVR
-#elif defined(ESP8266)
-#include <pgmspace.h>                          //use for PROGMEM Arduino ESP8266
-#elif defined(_VARIANT_ARDUINO_STM32_)
-#include <avr/pgmspace.h>                      //use for PROGMEM Arduino STM32
-#endif
-
-#include <Wire.h>
+#include <USIWire.h>
 
 
 #define HTU21D_ADDRESS               0x40      //chip i2c address
@@ -121,11 +109,7 @@ class HTU21D
   public:
    HTU21D(HTU21D_RESOLUTION = HTU21D_RES_RH12_TEMP14);
 
-   #if defined(ESP8266)
-   bool     begin(uint8_t sda = SDA, uint8_t scl = SCL);
-   #else
    bool     begin(void);
-   #endif
    float    readHumidity(HTU21D_HUMD_OPERATION_MODE = HTU21D_TRIGGER_HUMD_MEASURE_HOLD);    //max accuracy ±2%RH  in range 20%..80% at 25°C
    float    readCompensatedHumidity(float temperature = HTU21D_FORCE_READ_TEMP);            //max accuracy ±2%RH  in range 0%..100% at 0°C..80°C
    float    readTemperature(HTU21D_TEMP_OPERATION_MODE = HTU21D_TRIGGER_TEMP_MEASURE_HOLD); //max accuracy ±0.3°C in range 0°C..60°C

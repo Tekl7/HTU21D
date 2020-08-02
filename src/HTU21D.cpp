@@ -58,18 +58,10 @@ HTU21D::HTU21D(HTU21D_RESOLUTION sensorResolution)
       - 4 other error
 */
 /**************************************************************************/
-#if defined(ESP8266)
-bool HTU21D::begin(uint8_t sda, uint8_t scl)
-{
-  Wire.begin(sda, scl);
-  Wire.setClock(100000UL);                           //experimental! ESP8266 i2c bus speed: 100kHz..400kHz/100000UL..400000UL, default 100000UL
-  Wire.setClockStretchLimit(230);                    //experimental! default 230usec
-#else
 bool HTU21D::begin(void) 
 {
   Wire.begin();
   Wire.setClock(100000UL);                           //experimental! AVR i2c bus speed: 31kHz..400kHz/31000UL..400000UL, default 100000UL
-#endif
 
   Wire.beginTransmission(HTU21D_ADDRESS);
   if (Wire.endTransmission(true) != 0) return false; //safety check, make sure the sensor is connected
@@ -115,15 +107,11 @@ void HTU21D::softReset(void)
 {
   Wire.beginTransmission(HTU21D_ADDRESS);
 
-  #if ARDUINO >= 100
   Wire.write(HTU21D_SOFT_RESET);
-  #else
-  Wire.send(HTU21D_SOFT_RESET);
-  #endif
 
   Wire.endTransmission(true);
 
-  delay(HTU21D_SOFT_RESET_DELAY);
+  _delay_ms(HTU21D_SOFT_RESET_DELAY);
 }
 
 /**************************************************************************/
@@ -215,51 +203,37 @@ float HTU21D::readHumidity(HTU21D_HUMD_OPERATION_MODE sensorOperationMode)
 
   /* request humidity measurement */
   Wire.beginTransmission(HTU21D_ADDRESS);
-  #if ARDUINO >= 100
   Wire.write(sensorOperationMode);
-  #else
-  Wire.send(sensorOperationMode);
-  #endif
   if (Wire.endTransmission(true) != 0) return HTU21D_ERROR;    //error handler, collision on the i2c bus
 
   /* humidity measurement delay */
   switch(_resolution)
   {
     case HTU21D_RES_RH12_TEMP14:
-      delay(29);                                               //HTU21D - 14..16msec, Si7021 - 10..12msec, SHT21 - 22..29msec
+      _delay_ms(29);                                               //HTU21D - 14..16msec, Si7021 - 10..12msec, SHT21 - 22..29msec
       break;
 
     case HTU21D_RES_RH11_TEMP11:
-      delay(15);                                               //HTU21D - 7..8msec,   Si7021 - 6..7msec,   SHT21 - 12..15msec
+      _delay_ms(15);                                               //HTU21D - 7..8msec,   Si7021 - 6..7msec,   SHT21 - 12..15msec
       break;
 
     case HTU21D_RES_RH10_TEMP13:
-      delay(9);                                                //HTU21D - 4..5msec,   Si7021 - 4..5msec,   SHT21 - 7..9msec
+      _delay_ms(9);                                                //HTU21D - 4..5msec,   Si7021 - 4..5msec,   SHT21 - 7..9msec
       break;
 
     case HTU21D_RES_RH8_TEMP12:
-      delay(4);                                                //HTU21D - 2..3msec,   Si7021 - 3..4msec,   SHT21 - 3..4msec
+      _delay_ms(4);                                                //HTU21D - 2..3msec,   Si7021 - 3..4msec,   SHT21 - 3..4msec
       break;
   }
 
   /* read humidity measurement to "wire.h" rxBuffer */
-  #if defined(_VARIANT_ARDUINO_STM32_)
-  Wire.requestFrom(HTU21D_ADDRESS, 3);
-  #else
   Wire.requestFrom(HTU21D_ADDRESS, 3, true);                   //true, stop message after transmission & releas the I2C bus
-  #endif
   if (Wire.available() != 3) return HTU21D_ERROR;              //check rxBuffer & error handler, collision on the i2c bus
 
   /* reads MSB, LSB byte & checksum from "wire.h" rxBuffer */
-  #if ARDUINO >= 100
   rawHumidity  = Wire.read() << 8;                             //reads MSB byte & shift it to the right
   rawHumidity |= Wire.read();                                  //reads LSB byte & sum with MSB byte
   checksum     = Wire.read();                                  //reads checksum
-  #else
-  rawHumidity  = Wire.receive() << 8;
-  rawHumidity |= Wire.receive();
-  checksum     = Wire.receive();
-  #endif
 
   if (checkCRC8(rawHumidity) != checksum) return HTU21D_ERROR; //error handler, checksum verification
 
@@ -306,11 +280,7 @@ float HTU21D::readTemperature(HTU21D_TEMP_OPERATION_MODE sensorOperationMode)
 
   /* request temperature measurement */
   Wire.beginTransmission(HTU21D_ADDRESS);
-  #if ARDUINO >= 100
-  Wire.write(sensorOperationMode); 
-  #else
-  Wire.send(sensorOperationMode);
-  #endif
+  Wire.write(sensorOperationMode);
   if (Wire.endTransmission(true) != 0) return HTU21D_ERROR;                                   //error handler, collision on the i2c bus
 
   /* temperature measurement delay */
@@ -319,42 +289,32 @@ float HTU21D::readTemperature(HTU21D_TEMP_OPERATION_MODE sensorOperationMode)
     switch(_resolution)
     {
       case HTU21D_RES_RH12_TEMP14:
-        delay(85);                                                                            //HTU21D - 44..50msec, Si7021 - 7..11msec, SHT21 - 66..85msec
+        _delay_ms(85);                                                                            //HTU21D - 44..50msec, Si7021 - 7..11msec, SHT21 - 66..85msec
         break;
 
       case HTU21D_RES_RH10_TEMP13:
-        delay(43);                                                                            //HTU21D - 22..25msec, Si7021 - 4..7msec,  SHT21 - 33..43msec
+        _delay_ms(43);                                                                            //HTU21D - 22..25msec, Si7021 - 4..7msec,  SHT21 - 33..43msec
         break;
 
       case HTU21D_RES_RH8_TEMP12:
-        delay(22);                                                                            //HTU21D - 11..13msec, Si7021 - 3..4msec,  SHT21 - 17..22msec
+        _delay_ms(22);                                                                            //HTU21D - 11..13msec, Si7021 - 3..4msec,  SHT21 - 17..22msec
         break;
 
       case HTU21D_RES_RH11_TEMP11:
-        delay(11);                                                                            //HTU21D - 6..7msec,   Si7021 - 2..3msec,  SHT21 - 9..11msec
+        _delay_ms(11);                                                                            //HTU21D - 6..7msec,   Si7021 - 2..3msec,  SHT21 - 9..11msec
         break;
     }
   }
   else qntRequest = 2;                                                                        //checksum is not available with "SI70xx_TEMP_READ_AFTER_RH_MEASURMENT"
 
   /* read temperature measurement to "wire.h" rxBuffer */
-  #if defined(_VARIANT_ARDUINO_STM32_)
-  Wire.requestFrom(HTU21D_ADDRESS, qntRequest);
-  #else
   Wire.requestFrom(HTU21D_ADDRESS, qntRequest, true);                                         //true, stop message after transmission & releas the I2C bus
-  #endif
   if (Wire.available() != qntRequest) return HTU21D_ERROR;                                    //check rxBuffer & error handler, collision on the i2c bus
 
   /* reads MSB, LSB byte & checksum from "wire.h" rxBuffer */
-  #if ARDUINO >= 100
   rawTemperature  = Wire.read() << 8;                                                         //reads MSB byte & shift it to the right
   rawTemperature |= Wire.read();                                                              //reads LSB byte and sum. with MSB byte
   if (sensorOperationMode != SI70xx_TEMP_READ_AFTER_RH_MEASURMENT) checksum = Wire.read();    //checksum is not available with "SI70xx_TEMP_READ_AFTER_RH_MEASURMENT"
-  #else
-  rawTemperature  = Wire.receive() << 8;
-  rawTemperature |= Wire.receive();
-  if (sensorOperationMode != SI70xx_TEMP_READ_AFTER_RH_MEASURMENT) checksum = Wire.receive();
-  #endif
 
   /* checksum is not available with "SI70xx_TEMP_READ_AFTER_RH_MEASURMENT" */
   if (sensorOperationMode != SI70xx_TEMP_READ_AFTER_RH_MEASURMENT && checkCRC8(rawTemperature) != checksum) return HTU21D_ERROR; //error handler, checksum verification
@@ -415,31 +375,16 @@ uint16_t HTU21D::readDeviceID(void)
   /* request serial_2 -> SNB3**, SNB2, SNB1, SNB0 */
   Wire.beginTransmission(HTU21D_ADDRESS);
 
-  #if ARDUINO >= 100
   Wire.write(HTU21D_SERIAL2_READ1);
   Wire.write(HTU21D_SERIAL2_READ2);
-  #else
-  Wire.send(HTU21D_SERIAL2_READ1);
-  Wire.send(HTU21D_SERIAL2_READ2);
-  #endif
   Wire.endTransmission(true);
 
   /* read serial_2 -> SNB3**, SNB2, CRC */
-  #if defined(_VARIANT_ARDUINO_STM32_)
-  Wire.requestFrom(HTU21D_ADDRESS, 3);
-  #else
   Wire.requestFrom(HTU21D_ADDRESS, 3, true);                //true, stop message after transmission & releas the I2C bus
-  #endif
 
-  #if ARDUINO >= 100
   deviceID  = Wire.read() << 8;
   deviceID |= Wire.read();
   checksum  = Wire.read();
-  #else
-  deviceID  = Wire.receive() << 8;
-  deviceID |= Wire.receive();
-  checksum  = Wire.receive();
-  #endif
 
   if (checkCRC8(deviceID) != checksum) return HTU21D_ERROR; //error handler, checksum verification
 
@@ -487,27 +432,14 @@ uint8_t HTU21D::readFirmwareVersion(void)
   /* request firware version */
   Wire.beginTransmission(HTU21D_ADDRESS);
 
-  #if ARDUINO >= 100
   Wire.write(HTU21D_FIRMWARE_READ1);
   Wire.write(HTU21D_FIRMWARE_READ2);
-  #else
-  Wire.send(HTU21D_FIRMWARE_READ1);
-  Wire.send(HTU21D_FIRMWARE_READ2);
-  #endif
   Wire.endTransmission(true);
 
   /* read firware version */
-  #if defined(_VARIANT_ARDUINO_STM32_)
-  Wire.requestFrom(HTU21D_ADDRESS, 1);
-  #else
   Wire.requestFrom(HTU21D_ADDRESS, 1, true); //true, stop message after transmission & releas the I2C bus
-  #endif
 
-  #if ARDUINO >= 100
   firmwareVersion = Wire.read();
-  #else
-  firmwareVersion = Wire.read();
-  #endif
 
   switch(firmwareVersion)
   {
@@ -536,13 +468,8 @@ uint8_t HTU21D::readFirmwareVersion(void)
 void HTU21D::write8(uint8_t reg, uint8_t value)
 {
   Wire.beginTransmission(HTU21D_ADDRESS);
-  #if ARDUINO >= 100
   Wire.write(reg);
   Wire.write(value);
-  #else
-  Wire.send(reg);
-  Wire.send(value);
-  #endif
   Wire.endTransmission(true);
 
 }
@@ -557,26 +484,14 @@ void HTU21D::write8(uint8_t reg, uint8_t value)
 uint8_t HTU21D::read8(uint8_t reg)
 {
   Wire.beginTransmission(HTU21D_ADDRESS);
-  #if ARDUINO >= 100
   Wire.write(reg);
-  #else
-  Wire.send(reg);
-  #endif
   if (Wire.endTransmission(true) != 0) return HTU21D_ERROR; //error handler, collision on the i2c bus;
 
-  #if defined(_VARIANT_ARDUINO_STM32_)
-  Wire.requestFrom(HTU21D_ADDRESS, 1);
-  #else
   Wire.requestFrom(HTU21D_ADDRESS, 1, true);                //true, stop message after transmission & releas the I2C bus
-  #endif
   if (Wire.available() != 1) return HTU21D_ERROR;           //check rxBuffer & error handler, collision on the i2c bus
 
   /* read byte from "wire.h" rxBuffer */
-  #if ARDUINO >= 100
   return Wire.read();
-  #else
-  return Wire.receive();
-  #endif
 }
 
 /**************************************************************************/
